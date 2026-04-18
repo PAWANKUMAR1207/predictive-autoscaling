@@ -1,7 +1,8 @@
 flask
 numpy
 pandas
-tensorflow
+tensorflow==2.15.0
 scikit-learn
 boto3
 gunicorn
+h5py
