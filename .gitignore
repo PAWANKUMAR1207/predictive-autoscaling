@@ -1,0 +1,22 @@
+# Models (already in S3, no need to push to GitHub)
+model/
+*.h5
+*.pkl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.env
+
+# VS Code
+.vscode/
+
+# Virtual environment
+venv/
+env/
+
+# OS files
+.DS_Store
+Thumbs.db
