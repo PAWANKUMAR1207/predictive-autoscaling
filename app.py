@@ -2,47 +2,34 @@ from flask import Flask, request, jsonify
 import numpy as np
 import pickle
 import boto3
-import os
 import tempfile
 from tensorflow.keras.models import load_model
 
 app = Flask(__name__)
 
-# S3 config - replace with your bucket name
 S3_BUCKET = "pawan-autoscaling-models-2026"
-S3_MODEL_KEY = "lstm_model.h5"
+S3_MODEL_KEY = "lstm_model.keras"
 S3_SCALER_KEY = "scaler.pkl"
 
-# These are the exact features used during training
 FEATURES = [
-    "cpu_utilisation",
-    "network_in_bytes",
-    "request_count",
-    "error_count",
-    "p99_latency_ms",
-    "error_rate_pct",
-    "hour_sin",
-    "hour_cos",
-    "dow_sin",
-    "dow_cos"
+    "cpu_utilisation", "network_in_bytes", "request_count",
+    "error_count", "p99_latency_ms", "error_rate_pct",
+    "hour_sin", "hour_cos", "dow_sin", "dow_cos"
 ]
-
-SEQ_LEN = 60  # same as training
+SEQ_LEN = 60
 
 def load_models_from_s3():
     s3 = boto3.client("s3")
 
-    # Download LSTM model
-    with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix=".keras", delete=False) as f:
         s3.download_fileobj(S3_BUCKET, S3_MODEL_KEY, f)
         model_path = f.name
 
-    # Download scaler
     with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
         s3.download_fileobj(S3_BUCKET, S3_SCALER_KEY, f)
         scaler_path = f.name
 
-    model = load_model(model_path)
+    model = load_model(model_path, compile=False)
     with open(scaler_path, "rb") as f:
         scaler = pickle.load(f)
 
@@ -60,7 +47,7 @@ def predict():
     Expects JSON body with 60 rows of data, each row having these 10 features:
     cpu_utilisation, network_in_bytes, request_count, error_count,
     p99_latency_ms, error_rate_pct, hour_sin, hour_cos, dow_sin, dow_cos
-    
+
     Example:
     {
         "data": [
@@ -87,18 +74,18 @@ def predict():
         arr_scaled = scaler.transform(arr)  # shape: (60, 10)
         arr_scaled = arr_scaled.reshape(1, SEQ_LEN, len(FEATURES))  # shape: (1, 60, 10)
 
-        # Predict
+        # Predict - model returns list of 3 arrays for multi-output
         prediction = model.predict(arr_scaled)
 
-        # Apply scaling decision logic
-        cpu_forecast = float(prediction[0][0])
-        anomaly_score = float(prediction[0][1])
-        error_rate_forecast = float(prediction[0][2])
+        # Multi-output model returns [cpu_array, anomaly_array, error_array]
+        cpu_forecast = float(prediction[0][0][0])
+        anomaly_score = float(prediction[1][0][0])
+        error_rate_forecast = float(prediction[2][0][0])
 
-        # Auto-scaling decision
-        if cpu_forecast > 75 or anomaly_score > 0.7:
+        # Auto-scaling decision (normalized values 0-1)
+        if cpu_forecast > 0.75 or anomaly_score > 0.7:
             scaling_action = "SCALE_UP"
-        elif cpu_forecast < 30 and anomaly_score < 0.3:
+        elif cpu_forecast < 0.30 and anomaly_score < 0.3:
             scaling_action = "SCALE_DOWN"
         else:
             scaling_action = "NO_CHANGE"
