@@ -1,7 +1,8 @@
 flask
 numpy
 pandas
-tensorflow==2.15.0
+tensorflow==2.19.0
+keras==3.13.2
 scikit-learn
 boto3
 gunicorn
