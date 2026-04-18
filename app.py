@@ -10,8 +10,8 @@ app = Flask(__name__)
 
 # S3 config - replace with your bucket name
 S3_BUCKET = "pawan-autoscaling-models-2026"
-S3_MODEL_KEY = "models/lstm_model.h5"
-S3_SCALER_KEY = "models/scaler.pkl"
+S3_MODEL_KEY = "lstm_model.h5"
+S3_SCALER_KEY = "scaler.pkl"
 
 # These are the exact features used during training
 FEATURES = [
