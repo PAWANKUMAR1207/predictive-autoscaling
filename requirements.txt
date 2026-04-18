@@ -8,3 +8,4 @@ boto3
 gunicorn
 h5py
 joblib
+prometheus-client
