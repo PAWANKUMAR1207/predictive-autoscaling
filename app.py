@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import numpy as np
-import pickle
+import joblib
 import boto3
 import tempfile
 from tensorflow.keras.models import load_model
@@ -30,8 +30,7 @@ def load_models_from_s3():
         scaler_path = f.name
 
     model = load_model(model_path, compile=False)
-    with open(scaler_path, "rb") as f:
-        scaler = pickle.load(f)
+    scaler = joblib.load(scaler_path)
 
     return model, scaler
 

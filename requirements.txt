@@ -7,3 +7,4 @@ scikit-learn
 boto3
 gunicorn
 h5py
+joblib
